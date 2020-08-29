@@ -1,16 +1,16 @@
 [package]
-name = "eldlib-rs"
+name = "edlib-rs"
 version = "0.1.0"
-authors = ["jean-pierre both <jeanpierre.both@gmail.com>"]
+authors = ["jeanpierre.both@gmail.com"]
 edition = "2018"
+build = "build.rs"
+license = "MIT/Apache-2.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-
+[lib]
+lib = "edlib_rs"
+path = "src/lib.rs"
 
 [build-dependencies]
-bindgen = "0.20.0"
 
-[package]
-build = "build.rs"
+bindgen = "0.55.1"
