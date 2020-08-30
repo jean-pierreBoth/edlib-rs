@@ -59,6 +59,8 @@ enum EdlibAlignTaskRs {
 /// see http://samtools.github.io/hts-specs/SAMv1.pdf
 ///see http://drive5.com/usearch/manual/cigar.html
 ///
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 enum EdlibCigarFormatRs {
     /// Match: 'M', Insertion: 'I', Deletion: 'D', Mismatch: 'M'.
     EDLIB_CIGAR_STANDARD,
@@ -85,6 +87,8 @@ enum EdlibEdopRs {
 // #define EDLIB_EDOP_MISMATCH 3 //!< Mismatch.
 
 /// Defines two given characters as equal.
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct EdlibEqualityPairRs {
         char : first,
         char : second,
@@ -95,6 +99,8 @@ pub struct EdlibEqualityPairRs {
 //=================================================================================================
 /// 
 /// Configuration object for edlibAlign() function.
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct EdlibAlignConfigRs<'a> {
     /// Set k to non-negative value to tell edlib that edit distance is not larger than k.
     /// Smaller k can significantly improve speed of computation.
@@ -150,8 +156,10 @@ impl Default for EdlibAlignConfigRs {
 //================================================================================================
 
 /// Container for results of alignment done by edlibAlign() function.
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 struct EdlibAlignResultRs {
-    ///EDLIB_STATUS_OK or EDLIB_STATUS_ERROR. If error, all other fields will have undefined values.
+    /// EDLIB_STATUS_OK or EDLIB_STATUS_ERROR. If error, all other fields will have undefined values.
     status : u32,
 
     /// -1 if k is non-negative and edit distance is larger than k.
@@ -191,7 +199,7 @@ struct EdlibAlignResultRs {
 
      /// Number of different characters in query and target together.
     alphabetLength : u32
-}
+}  // end of struct EdlibAlignResultRs
 
     /**
      * Frees memory in EdlibAlignResult that was allocated by edlib.
@@ -200,47 +208,61 @@ struct EdlibAlignResultRs {
     void edlibFreeAlignResult(EdlibAlignResult result);
 
 
-    /**
-     * Aligns two sequences (query and target) using edit distance (levenshtein distance).
-     * Through config parameter, this function supports different alignment methods (global, prefix, infix),
-     * as well as different modes of search (tasks).
-     * It always returns edit distance and end locations of optimal alignment in target.
-     * It optionally returns start locations of optimal alignment in target and alignment path,
-     * if you choose appropriate tasks.
-     * @param [in] query  First sequence.
-     * @param [in] queryLength  Number of characters in first sequence.
-     * @param [in] target  Second sequence.
-     * @param [in] targetLength  Number of characters in second sequence.
-     * @param [in] config  Additional alignment parameters, like alignment method and wanted results.
-     * @return  Result of alignment, which can contain edit distance, start and end locations and alignment path.
-     *          Make sure to clean up the object using edlibFreeAlignResult() or by manually freeing needed members.
-     */
-    EdlibAlignResult edlibAlign(const char* query, int queryLength,
-                                const char* target, int targetLength,
-                                const EdlibAlignConfig config);
+    // /**
+    /// Aligns two sequences (query and target) using edit distance (levenshtein distance).
+    /// Through config parameter, this function supports different alignment methods (global, prefix, infix),
+    /// as well as different modes of search (tasks).
+    /// It always returns edit distance and end locations of optimal alignment in target.
+    /// It optionally returns start locations of optimal alignment in target and alignment path,
+    /// if you choose appropriate tasks.
+    /// Parameters:
+    ///     - query  : First sequence.
+    ///     - target : Second sequence.
+    ///     - config : Additional alignment parameters, like alignment method and wanted results.
+    ///  Result of alignment, which can contain edit distance, start and end locations and alignment path.
+    //  *          Make sure to clean up the object using edlibFreeAlignResult() or by manually freeing needed members.
+    
+    pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfigRs) -> EdlibAlignResultRs {
+        // real work here
+        // get pointers to query and target to EdlibEqualityPair form config
+        let mut config_c = edlibDefaultAlignConfig();
+        config_c.
+        // Recast to EdlibAlignResultRs
+        let res_c : EdlibAlignResult = edlibAlign(query.as_ptr() as *const ::std::os::raw::c_char,
+                                            query.len() as ::std::os::raw::c_int, 
+                                            target.as_ptr() as *const ::std::os::raw::c_char, 
+                                            target.len() as ::std::os::raw::c_int,
+                                            // now config
+                        
+                                        );
+    }
 
 
-    /**
-     * Builds cigar string from given alignment sequence.
-     * @param [in] alignment  Alignment sequence.
-     *     0 stands for match.
-     *     1 stands for insertion to target.
-     *     2 stands for insertion to query.
-     *     3 stands for mismatch.
-     * @param [in] alignmentLength
-     * @param [in] cigarFormat  Cigar will be returned in specified format.
-     * @return Cigar string.
-     *     I stands for insertion.
-     *     D stands for deletion.
-     *     X stands for mismatch. (used only in extended format)
-     *     = stands for match. (used only in extended format)
-     *     M stands for (mis)match. (used only in standard format)
-     *     String is null terminated.
-     *     Needed memory is allocated and given pointer is set to it.
-     *     Do not forget to free it later using free()!
-     */
-    char* edlibAlignmentToCigar(const unsigned char* alignment, int alignmentLength,
-                                EdlibCigarFormat cigarFormat);
+
+    
+    /// Builds cigar string from given alignment sequence.
+    ///  @param [in] alignment  Alignment sequence.
+    //  *     0 stands for match.
+    //  *     1 stands for insertion to target.
+    //  *     2 stands for insertion to query.
+    //  *     3 stands for mismatch.
+    //  * @param [in] alignmentLength
+    //  * @param [in] cigarFormat  Cigar will be returned in specified format.
+    ///
+    //  * @return Cigar string.
+    ///
+    ///     I stands for insertion.
+    ///     D stands for deletion.
+    ///     X stands for mismatch. (used only in extended format)
+    ///    = stands for match. (used only in extended format)
+    ///     M stands for (mis)match. (used only in standard format)
+    //  *     String is null terminated.
+    //  *     Needed memory is allocated and given pointer is set to it.
+    //  *     Do not forget to free it later using free()!
+    // 
+    pub fn edlibAlignmentToCigarRs(alignment : &[u8], cigarFormat : &EdlibCigarFormatRs) -> String {
+
+    }
 
 
 
