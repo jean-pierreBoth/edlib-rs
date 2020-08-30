@@ -1,16 +1,16 @@
 [package]
-name = "edlib-rs"
+name = "edlib_rs"
 version = "0.1.0"
 authors = ["jeanpierre.both@gmail.com"]
 edition = "2018"
 build = "build.rs"
 license = "MIT/Apache-2.0"
-
+keywords = ["ffi", "bindings", "edlib"]
+repository = "https://github.com/jean-pierreBoth/edlib-rs"
 
 [lib]
 lib = "edlib_rs"
 path = "src/lib.rs"
 
 [build-dependencies]
-
 bindgen = "0.55.1"
