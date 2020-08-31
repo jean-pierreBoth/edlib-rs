@@ -3,3 +3,5 @@ Runs
 Cargo.lock
 rls*
 .idea/
+*.pdf
+*.html
