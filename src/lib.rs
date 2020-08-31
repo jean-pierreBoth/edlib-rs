@@ -3,3 +3,8 @@
 #![allow(non_snake_case)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+#[doc(hidden)]
+pub mod bindings;
+
+pub mod edlibrs;

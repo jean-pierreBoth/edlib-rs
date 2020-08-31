@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::fs::File;
 use std::io::prelude::*;
 
-// We have path to edlib, generate wrapper.h with  path to correct include
+// We have path to edlib, generate wrapper.h with  path to correct include 
 fn write_wrapper(edlibpath : &PathBuf) {
     let mut inclpath = edlibpath.clone();
     inclpath.push("edlib");
@@ -22,7 +22,9 @@ fn write_wrapper(edlibpath : &PathBuf) {
 
 
 fn main() {
-    let edlib_path = PathBuf::from(env::var("EDLIB_DIR").unwrap());
+    let edlib_env = env::var("EDLIB_DIR");
+    let edlib_src = edlib_env.expect("env variable EDLIB_DIR not set");
+    let edlib_path = PathBuf::from(edlib_src);
     //
     write_wrapper(&edlib_path);
     //
@@ -50,8 +52,12 @@ fn main() {
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let src_path = PathBuf::from("src");
     //
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+    // We dump bindings.rs in src directory beccause it is included in lib.rs
+    bindings.write_to_file(src_path.join("bindings.rs")).expect("Couldn't write bindings in src/ !");
+    
 }
