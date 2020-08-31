@@ -113,21 +113,21 @@ pub struct EdlibAlignConfigRs<'a> {
     /// Smaller k can significantly improve speed of computation.
     /// If edit distance is larger than k, edlib will set edit distance to -1.
     /// Set k to negative value and edlib will internally auto-adjust k until score is found.
-    k : i32,
+    pub k : i32,
 
     /// Alignment method.
     /// EDLIB_MODE_NW: global (Needleman-Wunsch)
     /// EDLIB_MODE_SHW: prefix. Gap after query is not penalized.
     /// EDLIB_MODE_HW: infix. Gaps before and after query are not penalized.
     ///
-    mode : EdlibAlignModeRs,
+    pub mode : EdlibAlignModeRs,
 
     /// Alignment task - tells Edlib what to calculate. Less to calculate, faster it is.
     /// EDLIB_TASK_DISTANCE - find edit distance and end locations of optimal alignment paths in target.
     /// EDLIB_TASK_LOC - find edit distance and start and end locations of optimal alignment paths in target.
     /// EDLIB_TASK_PATH - find edit distance, alignment path (and start and end locations of it in target).
     ///
-    task : EdlibAlignTaskRs,
+    pub task : EdlibAlignTaskRs,
 
     /// List of pairs of characters, where each pair defines two characters as equal.
     /// This way you can extend edlib's definition of equality (which is that each character is equal only
@@ -135,7 +135,7 @@ pub struct EdlibAlignConfigRs<'a> {
     /// This can be useful if you have some wildcard characters that should match multiple other characters,
     /// or e.g. if you want edlib to be case insensitive.
     /// Can be set to NULL if there are none.
-    additionalequalities : &'a[EdlibEqualityPairRs],
+    pub additionalequalities : &'a[EdlibEqualityPairRs],
 }
 
 
@@ -170,25 +170,25 @@ impl <'a> Default for EdlibAlignConfigRs<'a> {
 #[derive(Debug,Clone)]
 pub struct EdlibAlignResultRs {
     /// EDLIB_STATUS_OK or EDLIB_STATUS_ERROR. If error, all other fields will have undefined values.
-    status : u32,
+    pub status : u32,
 
     /// -1 if k is non-negative and edit distance is larger than k.
-    editDistance : i32,
+    pub editDistance : i32,
 
     /// Array of zero-based positions in target where optimal alignment paths end.
     /// If gap after query is penalized, gap counts as part of query (NW), otherwise not.
     /// Set to NULL if edit distance is larger than k.
-    endLocations : Option<Vec<i32>>,
+    pub endLocations : Option<Vec<i32>>,
 
     /// Array of zero-based positions in target where optimal alignment paths start,
     /// they correspond to endLocations.
     /// If gap before query is penalized, gap counts as part of query (NW), otherwise not.
     /// Set to NULL if not calculated or if edit distance is larger than k.
-    startLocations : Option<Vec<i32>>,
+    pub startLocations : Option<Vec<i32>>,
 
     
     /// Number of end (and start) locations.
-    numLocations : usize,
+    pub numLocations : usize,
 
     /// Alignment is found for first pair of start and end locations.
     /// Set to NULL if not calculated.
@@ -199,13 +199,13 @@ pub struct EdlibAlignResultRs {
     /// 3 stands for mismatch.
     /// Alignment aligns query to target from begining of query till end of query.
     /// If gaps are not penalized, they are not in alignment.
-    alignment : Option<Vec<char>>,
+    pub alignment : Option<Vec<char>>,
 
     /// Length of alignment.
-    alignmentLength : u32,
+    pub alignmentLength : u32,
 
      /// Number of different characters in query and target together.
-    alphabetLength : u32
+    pub alphabetLength : u32
 }  // end of struct EdlibAlignResultRs
 
 
@@ -229,19 +229,20 @@ impl Default for  EdlibAlignResultRs {
 
 
     
-    /// Aligns two sequences (query and target) using edit distance (levenshtein distance).
+    /// Aligns two sequences (query and target) using edit distance (levenshtein distance).  
     /// Through config parameter, this function supports different alignment methods (global, prefix, infix),
-    /// as well as different modes of search (tasks).
+    /// as well as different modes of search (tasks).  
     /// It always returns edit distance and end locations of optimal alignment in target.
     /// It optionally returns start locations of optimal alignment in target and alignment path,
-    /// if you choose appropriate tasks.
-    /// Parameters:
-    ///     - query  : First sequence.
-    ///     - target : Second sequence.
-    ///     - config : Additional alignment parameters, like alignment method and wanted results.
-    ///  Result of alignment, which can contain edit distance, start and end locations and alignment path.
-    /// Note:
-    ///  Rust interface causes clone of start/end locations and ensures i32 representation and so transfer memory responsability to Rust.
+    /// if you choose appropriate tasks.  
+    /// Parameters:  
+    ///     . query  : First sequence.  
+    ///     . target : Second sequence.  
+    ///     . config : Additional alignment parameters, like alignment method and wanted results.  
+    /// Result of alignment, which can contain edit distance, start and end locations and alignment path.  
+    /// **Note**:  
+    ///  Rust interface causes cloning of start/end locations and ensures i32 representation and so transfer 
+    /// memory responsability to Rust.
     
     pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfigRs) -> EdlibAlignResultRs {
         // real work here
@@ -309,7 +310,7 @@ impl Default for  EdlibAlignResultRs {
     //  *     Needed memory is allocated and given pointer is set to it.
     //  *     Do not forget to free it later using free()!
     // 
-    pub fn edlibAlignmentToCigarRs(alignment : &[u8], cigarFormat : &EdlibCigarFormat) {
+    pub fn edlibAlignmentToCigarRs(_alignment : &[u8], _cigarFormat : &EdlibCigarFormat) {
         println!("not yet iplmeented");
 
     }
