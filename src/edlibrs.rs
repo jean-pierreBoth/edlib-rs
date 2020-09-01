@@ -6,6 +6,7 @@
 ///
 
 use ::std::slice;
+use ::std::os::raw::c_char;
 
 use crate::bindings::*;
 
@@ -20,7 +21,7 @@ const EDLIB_STATUS_ERROR : u32 = 1;
 #[derive(Debug, Copy, Clone)]
 pub enum EdlibAlignModeRs {
     ///
-    /// Global method. This is the standard method.
+    /// Global method. This is the standard and default method.
     /// Useful when you want to find out how similar is first sequence to second sequence.
     ///
     EDLIB_MODE_NW,
@@ -52,9 +53,9 @@ pub enum EdlibAlignModeRs {
     ///
 #[derive(Debug, Copy, Clone)]
 pub enum EdlibAlignTaskRs {
-    /// Find edit distance and end locations
+    /// Find edit distance and end locations. This is the default mode.
     EDLIB_TASK_DISTANCE,
-    ///    Find edit distance, end locations and start locations.    
+    ///  Find edit distance, end locations and start locations.    
     EDLIB_TASK_LOC,
     /// Find edit distance, end locations and start locations and alignment path.       
     EDLIB_TASK_PATH
@@ -88,10 +89,6 @@ pub enum EdlibEdopRs {
 }
 
 
-// #define EDLIB_EDOP_MATCH  0   //!< Match.
-// #define EDLIB_EDOP_INSERT 1   //!< Insertion to target = deletion from query.
-// #define EDLIB_EDOP_DELETE 2   //!< Deletion from target = insertion to query.
-// #define EDLIB_EDOP_MISMATCH 3 //!< Mismatch.
 
 // We use c_char here to be able to cast C pointer directly
 /// Defines two given characters as equal.
@@ -157,7 +154,7 @@ impl <'a> EdlibAlignConfigRs<'a> {
 impl <'a> Default for EdlibAlignConfigRs<'a> {
     ///      k = -1, mode = EDLIB_MODE_NW, task = EDLIB_TASK_DISTANCE, no additional equalities.
     fn default() -> Self {
-        EdlibAlignConfigRs{k:-1, 
+        EdlibAlignConfigRs{ k:-1, 
                             mode : EdlibAlignModeRs::EDLIB_MODE_NW,
                             task : EdlibAlignTaskRs::EDLIB_TASK_DISTANCE, 
                             additionalequalities : &[]}
@@ -178,7 +175,7 @@ pub struct EdlibAlignResultRs {
 
     /// Array of zero-based positions in target where optimal alignment paths end.
     /// If gap after query is penalized, gap counts as part of query (NW), otherwise not.
-    /// Set to NULL if edit distance is larger than k.
+    /// Set to None if edit distance is larger than k.
     pub endLocations : Option<Vec<i32>>,
 
     /// Array of zero-based positions in target where optimal alignment paths start,
@@ -200,10 +197,8 @@ pub struct EdlibAlignResultRs {
     ///         3 stands for mismatch.  
     /// Alignment aligns query to target from begining of query till end of query.
     /// If gaps are not penalized, they are not in alignment.
-    pub alignment : Option<Vec<char>>,
+    pub alignment : Option<Vec<u8>>,
 
-    /// Length of alignment.
-    pub alignmentLength : u32,
 
      /// Number of different characters in query and target together.
     pub alphabetLength : u32
@@ -212,7 +207,7 @@ pub struct EdlibAlignResultRs {
 
 
 impl Default for  EdlibAlignResultRs {
-    ///      k = -1, mode = EDLIB_MODE_NW, task = EDLIB_TASK_DISTANCE, no additional equalities.
+    ///   k = -1, mode = EDLIB_MODE_NW, task = EDLIB_TASK_DISTANCE, no additional equalities.
     fn default() -> Self {
         EdlibAlignResultRs{ status : EDLIB_STATUS_OK, 
                             editDistance : 0,
@@ -220,7 +215,6 @@ impl Default for  EdlibAlignResultRs {
                             startLocations : None,
                             numLocations : 0,
                             alignment : None,
-                            alignmentLength : 0,
                             alphabetLength : 0,
         }
     }
@@ -229,92 +223,106 @@ impl Default for  EdlibAlignResultRs {
 
 
 
-    
-    /// Aligns two sequences (query and target) using edit distance (levenshtein distance).  
-    /// Through config parameter, this function supports different alignment methods (global, prefix, infix),
-    /// as well as different modes of search (tasks).  
-    /// It always returns edit distance and end locations of optimal alignment in target.
-    /// It optionally returns start locations of optimal alignment in target and alignment path,
-    /// if you choose appropriate tasks.  
-    /// Parameters:  
-    ///     . query  : First sequence.  
-    ///     . target : Second sequence.  
-    ///     . config : Additional alignment parameters, like alignment method and wanted results.  
-    /// Result of alignment, which can contain edit distance, start and end locations and alignment path.  
-    /// **Note**:  
-    ///  Rust interface causes cloning of start/end locations, ensures i32 representations of locations and so transfer 
-    /// memory responsability to Rust.
-    
-    pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfigRs) -> EdlibAlignResultRs {
-        // real work here
-        // get pointers to query and target to EdlibEqualityPair form config
-        let mut config_c = unsafe { edlibDefaultAlignConfig() };
-        config_c.k = config_rs.k as  ::std::os::raw::c_int;
-        config_c.mode = match config_rs.mode {
-            EdlibAlignModeRs::EDLIB_MODE_NW => 0,
-            EdlibAlignModeRs::EDLIB_MODE_SHW => 1,
-            EdlibAlignModeRs::EDLIB_MODE_HW => 2,
-        };
-        config_c.additionalEqualitiesLength = config_rs.additionalequalities.len() as ::std::os::raw::c_int;
-        if config_c.additionalEqualitiesLength > 0 {
-            config_c.additionalEqualities = config_rs.additionalequalities.as_ptr() as *const EdlibEqualityPair;
-        }
-        else {
-            config_c.additionalEqualities = ::std::ptr::null::<EdlibEqualityPair>();
-        }
-        // Recast to EdlibAlignResultRs
-        let res_c : EdlibAlignResult = unsafe { edlibAlign(query.as_ptr() as *const ::std::os::raw::c_char,
-                                            query.len() as ::std::os::raw::c_int, 
-                                            target.as_ptr() as *const ::std::os::raw::c_char, 
-                                            target.len() as ::std::os::raw::c_int,
-                                            // now config
-                                            config_c
-                                        )} ;
-        // go back to EdlibAlignResultRs. Clone incurs some cost. Should go to impl From<EdlibAlignResult>
-        let mut align_res_rs = EdlibAlignResultRs::default();
-        align_res_rs.status = res_c.status as u32;
-        align_res_rs.editDistance = res_c.editDistance as i32;
-        align_res_rs.numLocations = res_c.numLocations as usize;
-        // get  ::std::os::raw::c_int slices for endLocations
-        if align_res_rs.numLocations > 0 {
-            let s_end = unsafe { slice::from_raw_parts(res_c.endLocations, align_res_rs.numLocations) };
-            align_res_rs.endLocations = Some(s_end.into_iter().map(|l| *l as i32).collect());
-            let s_start = unsafe { slice::from_raw_parts(res_c.startLocations, align_res_rs.numLocations) };
-            align_res_rs.startLocations = Some(s_start.into_iter().map(|l| *l as i32).collect());
-        }
-        // Free C datas
-        unsafe { edlibFreeAlignResult(res_c); };
-        //
-        align_res_rs
+
+/// Aligns two sequences (query and target) using edit distance (levenshtein distance).  
+/// Through config parameter, this function supports different alignment methods (global, prefix, infix),
+/// as well as different modes of search (tasks).  
+/// It always returns edit distance and end locations of optimal alignment in target.
+/// It optionally returns start locations of optimal alignment in target and alignment path,
+/// if you choose appropriate tasks.  
+/// Parameters:  
+///     . query  : First sequence.  
+///     . target : Second sequence.  
+///     . config : Additional alignment parameters, like alignment method and wanted results.  
+/// Result of alignment, which can contain edit distance, start and end locations and alignment path.  
+/// **Note**:  
+///  Rust interface causes cloning of start/end locations, ensures i32 representations of locations and so transfer 
+/// memory responsability to Rust.
+
+pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfigRs) -> EdlibAlignResultRs {
+    // real work here
+    // get pointers to query and target to EdlibEqualityPair form config
+    let mut config_c = unsafe { edlibDefaultAlignConfig() };
+    config_c.k = config_rs.k as  ::std::os::raw::c_int;
+    config_c.mode = match config_rs.mode {
+        EdlibAlignModeRs::EDLIB_MODE_NW => 0,
+        EdlibAlignModeRs::EDLIB_MODE_SHW => 1,
+        EdlibAlignModeRs::EDLIB_MODE_HW => 2,
+    };
+    config_c.task = match config_rs.task {
+        EdlibAlignTaskRs::EDLIB_TASK_DISTANCE => 0,
+        EdlibAlignTaskRs::EDLIB_TASK_LOC => 1,
+        EdlibAlignTaskRs::EDLIB_TASK_PATH => 2,
+    };
+    config_c.additionalEqualitiesLength = config_rs.additionalequalities.len() as ::std::os::raw::c_int;
+    if config_c.additionalEqualitiesLength > 0 {
+        config_c.additionalEqualities = config_rs.additionalequalities.as_ptr() as *const EdlibEqualityPair;
     }
+    else {
+        config_c.additionalEqualities = ::std::ptr::null::<EdlibEqualityPair>();
+    }
+    // Recast to EdlibAlignResultRs
+    let res_c : EdlibAlignResult = unsafe { edlibAlign(query.as_ptr() as *const ::std::os::raw::c_char,
+                                        query.len() as ::std::os::raw::c_int, 
+                                        target.as_ptr() as *const ::std::os::raw::c_char, 
+                                        target.len() as ::std::os::raw::c_int,
+                                        // now config
+                                        config_c
+                                    )} ;
+    // go back to EdlibAlignResultRs. Clone incurs some cost. Should go to impl From<EdlibAlignResult>
+    let mut align_res_rs = EdlibAlignResultRs::default();
+    align_res_rs.status = res_c.status as u32;
+    align_res_rs.editDistance = res_c.editDistance as i32;
+    align_res_rs.numLocations = res_c.numLocations as usize;
+    // get  ::std::os::raw::c_int slices for endLocations
+    if res_c.numLocations > 0 {
+        let s_end = unsafe { slice::from_raw_parts(res_c.endLocations, res_c.numLocations as usize) };
+        align_res_rs.endLocations = Some(s_end.into_iter().map(|l| *l as i32).collect());
+        let s_start = unsafe { slice::from_raw_parts(res_c.startLocations, res_c.numLocations as usize) };
+        align_res_rs.startLocations = Some(s_start.into_iter().map(|l| *l as i32).collect());
+    }
+     if res_c.alignmentLength > 0 {
+        let s_align = unsafe { slice::from_raw_parts(res_c.alignment, res_c.alignmentLength as usize) };
+        align_res_rs.alignment = Some(s_align.into_iter().map(|l| *l as u8).collect());
+     }
+    align_res_rs.alphabetLength = res_c.alphabetLength as u32;
+    // Free C datas
+    unsafe { edlibFreeAlignResult(res_c); };
+    //
+    align_res_rs
+}
 
 
 
-    
-    /// Builds cigar string from given alignment sequence.
-    ///  @param [in] alignment  Alignment sequence.
-    //  *     0 stands for match.
-    //  *     1 stands for insertion to target.
-    //  *     2 stands for insertion to query.
-    //  *     3 stands for mismatch.
-    //  * @param [in] alignmentLength
-    //  * @param [in] cigarFormat  Cigar will be returned in specified format.
-    ///
-    //  * @return Cigar string.
-    ///
-    ///     I stands for insertion.
-    ///     D stands for deletion.
-    ///     X stands for mismatch. (used only in extended format)
-    ///    = stands for match. (used only in extended format)
-    ///     M stands for (mis)match. (used only in standard format)
-    //  *     String is null terminated.
-    //  *     Needed memory is allocated and given pointer is set to it.
-    //  *     Do not forget to free it later using free()!
-    // 
-    pub fn edlibAlignmentToCigarRs(_alignment : &[u8], _cigarFormat : &EdlibCigarFormat) {
-        println!("not yet iplmeented");
+
+/// Builds cigar string from given alignment sequence.
+///  @param [in] alignment  Alignment sequence.
+//  *     0 stands for match.
+//  *     1 stands for insertion to target.
+//  *     2 stands for insertion to query.
+//  *     3 stands for mismatch.
+//  * @param [in] alignmentLength
+//  * @param [in] cigarFormat  Cigar will be returned in specified format.
+///
+//  * @return Cigar string.
+///
+///     I stands for insertion.
+///     D stands for deletion.
+///     X stands for mismatch. (used only in extended format)
+///    = stands for match. (used only in extended format)
+///     M stands for (mis)match. (used only in standard format)
+//  *     Do not forget to free it later using free()!
+// 
+pub fn edlibAlignmentToCigarRs(alignment : &[u8], cigarFormat : &EdlibCigarFormatRs) -> String {
+    // convert cigarFormat to C arg
+    let cigarstring : String;
+    unsafe {
+        let c_res : *const c_char = edlibAlignmentToCigar(alignment.as_ptr() , alignment.len() as i32 , *cigarFormat as u32);
+        cigarstring = ::std::ffi::CStr::from_ptr(c_res).to_string_lossy().into_owned();
 
     }
+    cigarstring
+}
 
 
 
@@ -327,17 +335,17 @@ mod tests {
 use super::*;
 
 #[test]
-fn test_default_nw() {
+fn test_distance_nw() {
     let query = "ACCTCTG";
     let target = "ACTCTGAAA";
     let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &EdlibAlignConfigRs::default());
     assert_eq!(align_res.status, EDLIB_STATUS_OK);
     assert_eq!(align_res.editDistance, 4);
-} // end test_default
+} // end test_distance_nw
 
 
 #[test]
-fn test_default_shw() {
+fn test_distance_shw() {
     let query = "ACCTCTG";
     let target = "ACTCTGAAA";
     //
@@ -346,10 +354,10 @@ fn test_default_shw() {
     let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &config);
     assert_eq!(align_res.status, EDLIB_STATUS_OK);
     assert_eq!(align_res.editDistance, 1);
-} // end test_default_shw
+} // end test_distance_shw
 
 #[test]
-fn test_default_hw() {
+fn test_distance_hw() {
     let query = "ACCTCTG";
     let target = "TTTTTTTTTTTTTTTTTTTTTACTCTGAAA";
     //
@@ -358,6 +366,29 @@ fn test_default_hw() {
     let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &config);
     assert_eq!(align_res.status, EDLIB_STATUS_OK);
     assert_eq!(align_res.editDistance, 1);
-} // end test_default_hw
+} // end test_distance_hw
+
+#[test]
+fn test_path_hw() {
+    let query = "missing";
+    let target = "mississipi";
+    //
+    let mut config = EdlibAlignConfigRs::default();
+    config.mode = EdlibAlignModeRs::EDLIB_MODE_HW;
+    config.task = EdlibAlignTaskRs::EDLIB_TASK_PATH;
+    let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &config);
+    assert_eq!(align_res.status, EDLIB_STATUS_OK);
+    assert_eq!(align_res.editDistance, 2);
+    assert!(align_res.startLocations.is_some());
+    assert!(align_res.endLocations.is_some());
+    //
+    assert!(align_res.alignment.is_some());
+
+    let cigar = edlibAlignmentToCigarRs(align_res.alignment.as_ref().unwrap(), &EdlibCigarFormatRs::EDLIB_CIGAR_STANDARD);
+    println!(" cigar : {:?}", cigar);
+
+    let cigarx = edlibAlignmentToCigarRs(align_res.alignment.as_ref().unwrap(), &EdlibCigarFormatRs::EDLIB_CIGAR_EXTENDED);
+    println!(" cigar : {:?}", cigarx);
+} // end of test_path_hw
 
 }  // mod tests
