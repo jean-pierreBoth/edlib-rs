@@ -293,33 +293,34 @@ pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfig
 }
 
 
+extern "C" { fn free(s :*const c_char); }
 
 
-/// Builds cigar string from given alignment sequence.
-///  @param [in] alignment  Alignment sequence.
-//  *     0 stands for match.
-//  *     1 stands for insertion to target.
-//  *     2 stands for insertion to query.
-//  *     3 stands for mismatch.
-//  * @param [in] alignmentLength
-//  * @param [in] cigarFormat  Cigar will be returned in specified format.
+/// Builds cigar string from given alignment sequence.  
+///  param : alignment  Alignment sequence.
+///  (is obtained from EdlibAlignResultRs.alignment which is a Some if EdlibAlignConfigRs.task is set to EdlibAlignTaskRs::EDLIB_TASK_PATH 
+///  see *test_path_hw*)
+///     *  0 stands for match.
+///     *  1 stands for insertion to target.
+///     *  2 stands for insertion to query.
+///     *  3 stands for mismatch.
+///  param cigarFormat  Cigar will be returned in specified format.
 ///
-//  * @return Cigar string.
-///
-///     I stands for insertion.
-///     D stands for deletion.
-///     X stands for mismatch. (used only in extended format)
-///    = stands for match. (used only in extended format)
-///     M stands for (mis)match. (used only in standard format)
-//  *     Do not forget to free it later using free()!
-// 
+///   return Cigar string where :
+///    * I stands for insertion.  
+///    * D stands for deletion.  
+///    * X stands for mismatch. (used only in extended format)
+///    * = stands for match. (used only in extended format)
+///    * M stands for (mis)match. (used only in standard format)
+
+
 pub fn edlibAlignmentToCigarRs(alignment : &[u8], cigarFormat : &EdlibCigarFormatRs) -> String {
     // convert cigarFormat to C arg
     let cigarstring : String;
     unsafe {
         let c_res : *const c_char = edlibAlignmentToCigar(alignment.as_ptr() , alignment.len() as i32 , *cigarFormat as u32);
         cigarstring = ::std::ffi::CStr::from_ptr(c_res).to_string_lossy().into_owned();
-
+        free(c_res);
     }
     cigarstring
 }

@@ -10,10 +10,11 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
-#[doc(hidden)]
+pub mod edlibrs;
+
+//#[doc(hidden)]
 pub mod bindings;
 
-pub mod edlibrs;
 
 lazy_static! {
     #[allow(dead_code)]
@@ -32,7 +33,6 @@ fn init_log() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     // initialize once log system for tests.
