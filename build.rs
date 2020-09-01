@@ -1,5 +1,6 @@
 extern crate bindgen;
 
+
 use std::env;
 use std::path::PathBuf;
 use std::fs::File;
@@ -32,8 +33,8 @@ fn main() {
     libdir.push_str(edlib_path.to_str().unwrap());
     libdir.push_str("/build/lib");
     println!("{}",libdir);
-//    println!("cargo:rustc-link-search=/home.1/jpboth/Soft/edlib/build/lib");
     println!("cargo:rustc-link-lib=edlib");
+    println!("cargo:rustc-link-lib=stdc++");
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for

@@ -5,13 +5,13 @@
 /// We also avoid pointers.
 ///
 
-use ::std::os::raw::c_char;
 use ::std::slice;
 
 use crate::bindings::*;
 
 // Status codes
 const EDLIB_STATUS_OK : u32 = 0;
+#[allow(dead_code)]
 const EDLIB_STATUS_ERROR : u32 = 1;
 
 ///
@@ -24,12 +24,12 @@ pub enum EdlibAlignModeRs {
     /// Useful when you want to find out how similar is first sequence to second sequence.
     ///
     EDLIB_MODE_NW,
-    ///
-    ///   Prefix method. Similar to global method, but with a small twist - gap at query end is not penalized.
-    ///   What that means is that deleting elements from the end of second sequence is "free"!
+
+    /// Prefix method. Similar to global method, but with a small twist - gap at query end is not penalized.
+    /// What that means is that deleting elements from the end of second sequence is "free"!
     /// For example, if we had "AACT" and "AACTGGC", edit distance would be 0, because removing "GGC" from the end
-    /// of second sequence is "free" and does not count into total edit distance. This method is appropriate
-    /// when you want to find out how well first sequence fits at the beginning of second sequence.
+    /// of second sequence is "free" and does not count into total edit distance.    
+    /// This method is appropriate when you want to find out how well first sequence fits at the beginning of second sequence.
     ///
     EDLIB_MODE_SHW,
     
@@ -41,7 +41,8 @@ pub enum EdlibAlignModeRs {
     /// second sequence.
     /// For example, if your second sequence was a long text and your first sequence was a sentence from that text,
     /// but slightly scrambled, you could use this method to discover how scrambled it is and where it fits in
-    /// that text. In bioinformatics, this method is appropriate for aligning read to a sequence.
+    /// that text.  
+    /// In bioinformatics, this method is appropriate for aligning read to a sequence.
     ///
     EDLIB_MODE_HW
 }
@@ -193,10 +194,10 @@ pub struct EdlibAlignResultRs {
     /// Alignment is found for first pair of start and end locations.
     /// Set to NULL if not calculated.
     /// Alignment is sequence of numbers: 0, 1, 2, 3.
-    /// 0 stands for match.
-    /// 1 stands for insertion to target.
-    /// 2 stands for insertion to query.
-    /// 3 stands for mismatch.
+    ///         0 stands for match.  
+    ///         1 stands for insertion to target.  
+    ///         2 stands for insertion to query.  
+    ///         3 stands for mismatch.  
     /// Alignment aligns query to target from begining of query till end of query.
     /// If gaps are not penalized, they are not in alignment.
     pub alignment : Option<Vec<char>>,
@@ -241,7 +242,7 @@ impl Default for  EdlibAlignResultRs {
     ///     . config : Additional alignment parameters, like alignment method and wanted results.  
     /// Result of alignment, which can contain edit distance, start and end locations and alignment path.  
     /// **Note**:  
-    ///  Rust interface causes cloning of start/end locations and ensures i32 representation and so transfer 
+    ///  Rust interface causes cloning of start/end locations, ensures i32 representations of locations and so transfer 
     /// memory responsability to Rust.
     
     pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfigRs) -> EdlibAlignResultRs {
@@ -317,4 +318,46 @@ impl Default for  EdlibAlignResultRs {
 
 
 
+//===================================================================
 
+#[cfg(test)]
+
+mod tests {
+
+use super::*;
+
+#[test]
+fn test_default_nw() {
+    let query = "ACCTCTG";
+    let target = "ACTCTGAAA";
+    let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &EdlibAlignConfigRs::default());
+    assert_eq!(align_res.status, EDLIB_STATUS_OK);
+    assert_eq!(align_res.editDistance, 4);
+} // end test_default
+
+
+#[test]
+fn test_default_shw() {
+    let query = "ACCTCTG";
+    let target = "ACTCTGAAA";
+    //
+    let mut config = EdlibAlignConfigRs::default();
+    config.mode = EdlibAlignModeRs::EDLIB_MODE_SHW;
+    let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &config);
+    assert_eq!(align_res.status, EDLIB_STATUS_OK);
+    assert_eq!(align_res.editDistance, 1);
+} // end test_default_shw
+
+#[test]
+fn test_default_hw() {
+    let query = "ACCTCTG";
+    let target = "TTTTTTTTTTTTTTTTTTTTTACTCTGAAA";
+    //
+    let mut config = EdlibAlignConfigRs::default();
+    config.mode = EdlibAlignModeRs::EDLIB_MODE_HW;
+    let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &config);
+    assert_eq!(align_res.status, EDLIB_STATUS_OK);
+    assert_eq!(align_res.editDistance, 1);
+} // end test_default_hw
+
+}  // mod tests
