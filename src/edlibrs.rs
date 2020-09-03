@@ -11,9 +11,9 @@ use ::std::os::raw::c_char;
 use crate::bindings::*;
 
 // Status codes
-const EDLIB_STATUS_OK : u32 = 0;
+pub const EDLIB_STATUS_OK : u32 = 0;
 #[allow(dead_code)]
-const EDLIB_STATUS_ERROR : u32 = 1;
+pub const EDLIB_STATUS_ERROR : u32 = 1;
 
 ///
 /// Alignment methods - how should Edlib treat gaps before and after query?
@@ -113,17 +113,17 @@ pub struct EdlibAlignConfigRs<'a> {
     /// Set k to negative value and edlib will internally auto-adjust k until score is found.
     pub k : i32,
 
-    /// Alignment method.
-    /// EDLIB_MODE_NW: global (Needleman-Wunsch)
-    /// EDLIB_MODE_SHW: prefix. Gap after query is not penalized.
+    /// Alignment method:  
+    /// EDLIB_MODE_NW: global (Needleman-Wunsch).    
+    /// EDLIB_MODE_SHW: prefix. Gap after query is not penalized.  
     /// EDLIB_MODE_HW: infix. Gaps before and after query are not penalized.
     ///
     pub mode : EdlibAlignModeRs,
 
-    /// Alignment task - tells Edlib what to calculate. Less to calculate, faster it is.
-    /// EDLIB_TASK_DISTANCE - find edit distance and end locations of optimal alignment paths in target.
-    /// EDLIB_TASK_LOC - find edit distance and start and end locations of optimal alignment paths in target.
-    /// EDLIB_TASK_PATH - find edit distance, alignment path (and start and end locations of it in target).
+    /// Alignment task - tells Edlib what to calculate. Less to calculate, faster it is.  
+    /// EDLIB_TASK_DISTANCE - find edit distance and end locations of optimal alignment paths in target.  
+    /// EDLIB_TASK_LOC - find edit distance and start and end locations of optimal alignment paths in target.  
+    /// EDLIB_TASK_PATH - find edit distance, alignment path (and start and end locations of it in target).  
     ///
     pub task : EdlibAlignTaskRs,
 
@@ -370,6 +370,25 @@ fn test_distance_hw() {
 } // end test_distance_hw
 
 #[test]
+fn test_distance_hw_with_pair() {
+    let query = "ACCTCTG";
+    let target = "TTTTTTTTTTTTTTTTTTTTTNCTCTXAAA";
+    let mut equalitypairs = Vec::<EdlibEqualityPairRs>::new();
+    let pair = EdlibEqualityPairRs{ first:'A' as c_char, second:'N' as c_char};
+    equalitypairs.push(pair);
+    let pair = EdlibEqualityPairRs{ first:'G' as c_char, second:'X' as c_char};
+    equalitypairs.push(pair);
+    let mut config = EdlibAlignConfigRs::default();
+    config.mode = EdlibAlignModeRs::EDLIB_MODE_HW;
+    config.additionalequalities = &equalitypairs;
+    let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &config);
+    assert_eq!(align_res.status, EDLIB_STATUS_OK);
+    assert_eq!(align_res.editDistance, 1);
+} // end of test_distance_with_pair
+
+
+
+#[test]
 fn test_path_hw() {
     let query = "missing";
     let target = "mississipi";
@@ -386,10 +405,14 @@ fn test_path_hw() {
     assert!(align_res.alignment.is_some());
 
     let cigar = edlibAlignmentToCigarRs(align_res.alignment.as_ref().unwrap(), &EdlibCigarFormatRs::EDLIB_CIGAR_STANDARD);
+    // answer is "5M2I"
     println!(" cigar : {:?}", cigar);
+    assert_eq!(cigar, "5M2I");
 
     let cigarx = edlibAlignmentToCigarRs(align_res.alignment.as_ref().unwrap(), &EdlibCigarFormatRs::EDLIB_CIGAR_EXTENDED);
+    // answer is "5=2I"
     println!(" cigar : {:?}", cigarx);
+    assert_eq!(cigarx, "5=2I");
 } // end of test_path_hw
 
 }  // mod tests
