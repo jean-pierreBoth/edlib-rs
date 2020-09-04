@@ -19,6 +19,7 @@ pub const EDLIB_STATUS_ERROR : u32 = 1;
 /// Alignment methods - how should Edlib treat gaps before and after query?
 ///
 #[derive(Debug, Copy, Clone)]
+#[repr(C)]
 pub enum EdlibAlignModeRs {
     ///
     /// Global method. This is the standard and default method.
@@ -51,6 +52,7 @@ pub enum EdlibAlignModeRs {
     ///
     /// Alignment tasks - what do you want Edlib to do?
     ///
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub enum EdlibAlignTaskRs {
     /// Find edit distance and end locations. This is the default mode.
@@ -76,6 +78,7 @@ pub enum EdlibCigarFormatRs {
 }
 
 /// Edit operations.
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub enum EdlibEdopRs {
     /// Match
@@ -245,23 +248,27 @@ pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfig
     let mut config_c = unsafe { edlibDefaultAlignConfig() };
     config_c.k = config_rs.k as  ::std::os::raw::c_int;
     config_c.mode = match config_rs.mode {
-        EdlibAlignModeRs::EDLIB_MODE_NW => 0,
-        EdlibAlignModeRs::EDLIB_MODE_SHW => 1,
-        EdlibAlignModeRs::EDLIB_MODE_HW => 2,
+        EdlibAlignModeRs::EDLIB_MODE_NW => 0 as EdlibAlignMode,
+        EdlibAlignModeRs::EDLIB_MODE_SHW => 1 as EdlibAlignMode,
+        EdlibAlignModeRs::EDLIB_MODE_HW => 2 as EdlibAlignMode,
     };
     config_c.task = match config_rs.task {
-        EdlibAlignTaskRs::EDLIB_TASK_DISTANCE => 0,
-        EdlibAlignTaskRs::EDLIB_TASK_LOC => 1,
-        EdlibAlignTaskRs::EDLIB_TASK_PATH => 2,
+        EdlibAlignTaskRs::EDLIB_TASK_DISTANCE => 0 as EdlibAlignTask,
+        EdlibAlignTaskRs::EDLIB_TASK_LOC => 1 as EdlibAlignTask,
+        EdlibAlignTaskRs::EDLIB_TASK_PATH => 2 as EdlibAlignTask,
     };
+    println!("avant additionalEqualitiesLength");
     config_c.additionalEqualitiesLength = config_rs.additionalequalities.len() as ::std::os::raw::c_int;
     if config_c.additionalEqualitiesLength > 0 {
         config_c.additionalEqualities = config_rs.additionalequalities.as_ptr() as *const EdlibEqualityPair;
     }
     else {
+        println!("null additionalEqualitiesLength");
         config_c.additionalEqualities = ::std::ptr::null::<EdlibEqualityPair>();
     }
+
     // Recast to EdlibAlignResultRs
+    println!("avant call edlibAlign");
     let res_c : EdlibAlignResult = unsafe { edlibAlign(query.as_ptr() as *const ::std::os::raw::c_char,
                                         query.len() as ::std::os::raw::c_int, 
                                         target.as_ptr() as *const ::std::os::raw::c_char, 
@@ -270,25 +277,38 @@ pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfig
                                         config_c
                                     )} ;
     // go back to EdlibAlignResultRs. Clone incurs some cost. Should go to impl From<EdlibAlignResult>
+    println!("apres call edlibAlign");
     let mut align_res_rs = EdlibAlignResultRs::default();
     align_res_rs.status = res_c.status as u32;
     align_res_rs.editDistance = res_c.editDistance as i32;
     align_res_rs.numLocations = res_c.numLocations as usize;
     // get  ::std::os::raw::c_int slices for endLocations
     if res_c.numLocations > 0 {
-        let s_end = unsafe { slice::from_raw_parts(res_c.endLocations, res_c.numLocations as usize) };
-        align_res_rs.endLocations = Some(s_end.into_iter().map(|l| *l as i32).collect());
-        let s_start = unsafe { slice::from_raw_parts(res_c.startLocations, res_c.numLocations as usize) };
-        align_res_rs.startLocations = Some(s_start.into_iter().map(|l| *l as i32).collect());
+        println!("avant numLocations {} ",res_c.numLocations);
+        assert!(res_c.endLocations != std::ptr::null_mut());
+        let s_end  = unsafe { slice::from_raw_parts(res_c.endLocations, res_c.numLocations as usize) };
+        assert_eq!(s_end.len(), align_res_rs.numLocations);
+        align_res_rs.endLocations = Some(s_end.to_vec());
+        println!("apres numLocations end");
+        // we have startLocations only if task == LOC or PATH so we must check
+        if res_c.startLocations != std::ptr::null_mut() {
+            let s_start : &[::std::os::raw::c_int]= unsafe { slice::from_raw_parts(res_c.startLocations, res_c.numLocations as usize) };
+            assert_eq!(s_start.len(), align_res_rs.numLocations);
+            align_res_rs.startLocations = Some(s_start.to_vec());
+        }
+        println!("apres numLocations start");
     }
      if res_c.alignmentLength > 0 {
+        println!("avant alignmentLength");
         let s_align = unsafe { slice::from_raw_parts(res_c.alignment, res_c.alignmentLength as usize) };
-        align_res_rs.alignment = Some(s_align.into_iter().map(|l| *l as u8).collect());
+        align_res_rs.alignment = Some(s_align.to_vec());
+        println!("apres alignmentLength");
      }
     align_res_rs.alphabetLength = res_c.alphabetLength as u32;
     // Free C datas
     unsafe { edlibFreeAlignResult(res_c); };
-    //
+    println!("exiting  call edlibAlignRs ");
+//
     align_res_rs
 }
 
@@ -337,6 +357,7 @@ use super::*;
 
 #[test]
 fn test_distance_nw() {
+    println!("test_distance_nw");
     let query = "ACCTCTG";
     let target = "ACTCTGAAA";
     let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &EdlibAlignConfigRs::default());
@@ -347,6 +368,7 @@ fn test_distance_nw() {
 
 #[test]
 fn test_distance_shw() {
+    println!("test_distance_shw");
     let query = "ACCTCTG";
     let target = "ACTCTGAAA";
     //
@@ -359,6 +381,7 @@ fn test_distance_shw() {
 
 #[test]
 fn test_distance_hw() {
+    println!("test_distance_hw");
     let query = "ACCTCTG";
     let target = "TTTTTTTTTTTTTTTTTTTTTACTCTGAAA";
     //
@@ -371,6 +394,7 @@ fn test_distance_hw() {
 
 #[test]
 fn test_distance_hw_with_pair() {
+    println!("test_distance_hw_with_pair");
     let query = "ACCTCTG";
     let target = "TTTTTTTTTTTTTTTTTTTTTNCTCTXAAA";
     let mut equalitypairs = Vec::<EdlibEqualityPairRs>::new();
@@ -390,6 +414,7 @@ fn test_distance_hw_with_pair() {
 
 #[test]
 fn test_path_hw() {
+    println!("test_path_hw");
     let query = "missing";
     let target = "mississipi";
     //
