@@ -9,15 +9,16 @@ use clap::{App, Arg};
 use std::path::Path;
 use std::process;
 
-use::log::*;
 
 use ::cpu_time::ProcessTime;
 use std::time::Duration;
 /// example
-/// edalinger --dirdata  "/Soft/edlib/test_data/Enterobacteria_phage_1.fasta"
-///           --qf "Enterobacteria_phage_1.fasta"
-///           --tf "mutated_60_perc.fasta"
+/// edaligner --dirdata  "/Soft/edlib/test_data/Enterobacteria_phage_1.fasta"
+///           --tf "Enterobacteria_phage_1.fasta"
+///           --qf "mutated_60_perc.fasta"
 fn main() {
+    // initialize logger from env variable RUST_LOG
+    env_logger::Builder::from_default_env().init();
 
     let dirdata : String;
     let qfile : String;
@@ -107,6 +108,14 @@ fn main() {
     let cpu_time: Duration = start.try_elapsed().unwrap();
     println!("\n mode : {}, cpu time (ms) {} distance : {} ", mod_str , cpu_time.as_millis(), align_res.editDistance);
     //
+    mod_str = "EDLIB_MODE_SHW";
+    config.mode = EdlibAlignModeRs::EDLIB_MODE_SHW;
+    let start = ProcessTime::try_now().unwrap();
+    let align_res = edlibAlignRs(&qseq, &tseq, &config);
+    assert_eq!(align_res.status, EDLIB_STATUS_OK);
+    let cpu_time: Duration = start.try_elapsed().unwrap();
+    println!("\n mode : {}, cpu time (ms) {} distance : {} ", mod_str , cpu_time.as_millis(), align_res.editDistance);
+    //
     mod_str = "EDLIB_MODE_HW";
     config.mode = EdlibAlignModeRs::EDLIB_MODE_HW;
     let start = ProcessTime::try_now().unwrap();
@@ -114,7 +123,6 @@ fn main() {
     assert_eq!(align_res.status, EDLIB_STATUS_OK);
     let cpu_time: Duration = start.try_elapsed().unwrap();
     println!("\n mode : {}, cpu time (ms) {} distance : {} ", mod_str , cpu_time.as_millis(), align_res.editDistance);
-
 
 
 

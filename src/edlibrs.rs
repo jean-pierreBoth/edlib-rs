@@ -5,10 +5,15 @@
 /// We also avoid pointers.
 ///
 
+extern crate log;
+use log::*;
+
+
 use ::std::slice;
 use ::std::os::raw::c_char;
 
 use crate::bindings::*;
+
 
 // Status codes
 pub const EDLIB_STATUS_OK : u32 = 0;
@@ -257,18 +262,16 @@ pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfig
         EdlibAlignTaskRs::EDLIB_TASK_LOC => 1 as EdlibAlignTask,
         EdlibAlignTaskRs::EDLIB_TASK_PATH => 2 as EdlibAlignTask,
     };
-    println!("avant additionalEqualitiesLength");
     config_c.additionalEqualitiesLength = config_rs.additionalequalities.len() as ::std::os::raw::c_int;
     if config_c.additionalEqualitiesLength > 0 {
         config_c.additionalEqualities = config_rs.additionalequalities.as_ptr() as *const EdlibEqualityPair;
     }
     else {
-        println!("null additionalEqualitiesLength");
         config_c.additionalEqualities = ::std::ptr::null::<EdlibEqualityPair>();
     }
 
     // Recast to EdlibAlignResultRs
-    println!("avant call edlibAlign");
+    trace!("avant call edlibAlign");
     let res_c : EdlibAlignResult = unsafe { edlibAlign(query.as_ptr() as *const ::std::os::raw::c_char,
                                         query.len() as ::std::os::raw::c_int, 
                                         target.as_ptr() as *const ::std::os::raw::c_char, 
@@ -277,37 +280,33 @@ pub fn edlibAlignRs(query : &[u8], target : &[u8], config_rs : &EdlibAlignConfig
                                         config_c
                                     )} ;
     // go back to EdlibAlignResultRs. Clone incurs some cost. Should go to impl From<EdlibAlignResult>
-    println!("apres call edlibAlign");
+    log::trace!("apres call edlibAlign");
     let mut align_res_rs = EdlibAlignResultRs::default();
     align_res_rs.status = res_c.status as u32;
     align_res_rs.editDistance = res_c.editDistance as i32;
     align_res_rs.numLocations = res_c.numLocations as usize;
     // get  ::std::os::raw::c_int slices for endLocations
     if res_c.numLocations > 0 {
-        println!("avant numLocations {} ",res_c.numLocations);
         assert!(res_c.endLocations != std::ptr::null_mut());
         let s_end  = unsafe { slice::from_raw_parts(res_c.endLocations, res_c.numLocations as usize) };
         assert_eq!(s_end.len(), align_res_rs.numLocations);
         align_res_rs.endLocations = Some(s_end.to_vec());
-        println!("apres numLocations end");
         // we have startLocations only if task == LOC or PATH so we must check
         if res_c.startLocations != std::ptr::null_mut() {
             let s_start : &[::std::os::raw::c_int]= unsafe { slice::from_raw_parts(res_c.startLocations, res_c.numLocations as usize) };
             assert_eq!(s_start.len(), align_res_rs.numLocations);
             align_res_rs.startLocations = Some(s_start.to_vec());
         }
-        println!("apres numLocations start");
     }
      if res_c.alignmentLength > 0 {
-        println!("avant alignmentLength");
+        assert!(res_c.alignment != std::ptr::null_mut(), "null alignment pointer");
         let s_align = unsafe { slice::from_raw_parts(res_c.alignment, res_c.alignmentLength as usize) };
         align_res_rs.alignment = Some(s_align.to_vec());
-        println!("apres alignmentLength");
      }
     align_res_rs.alphabetLength = res_c.alphabetLength as u32;
     // Free C datas
     unsafe { edlibFreeAlignResult(res_c); };
-    println!("exiting  call edlibAlignRs ");
+    trace!("exiting  call edlibAlignRs ");
 //
     align_res_rs
 }
@@ -339,6 +338,7 @@ pub fn edlibAlignmentToCigarRs(alignment : &[u8], cigarFormat : &EdlibCigarForma
     let cigarstring : String;
     unsafe {
         let c_res : *const c_char = edlibAlignmentToCigar(alignment.as_ptr() , alignment.len() as i32 , *cigarFormat as u32);
+        assert!(c_res != std::ptr::null_mut(), "null cigar string returnd from C");
         cigarstring = ::std::ffi::CStr::from_ptr(c_res).to_string_lossy().into_owned();
         free(c_res);
     }
@@ -357,7 +357,8 @@ use super::*;
 
 #[test]
 fn test_distance_nw() {
-    println!("test_distance_nw");
+    env_logger::Builder::from_default_env().init();
+    trace!("test_distance_nw");
     let query = "ACCTCTG";
     let target = "ACTCTGAAA";
     let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &EdlibAlignConfigRs::default());
@@ -368,7 +369,8 @@ fn test_distance_nw() {
 
 #[test]
 fn test_distance_shw() {
-    println!("test_distance_shw");
+    env_logger::Builder::from_default_env();
+    trace!("test_distance_shw");
     let query = "ACCTCTG";
     let target = "ACTCTGAAA";
     //
@@ -381,7 +383,7 @@ fn test_distance_shw() {
 
 #[test]
 fn test_distance_hw() {
-    println!("test_distance_hw");
+    trace!("test_distance_hw");
     let query = "ACCTCTG";
     let target = "TTTTTTTTTTTTTTTTTTTTTACTCTGAAA";
     //
@@ -394,7 +396,7 @@ fn test_distance_hw() {
 
 #[test]
 fn test_distance_hw_with_pair() {
-    println!("test_distance_hw_with_pair");
+    trace!("test_distance_hw_with_pair");
     let query = "ACCTCTG";
     let target = "TTTTTTTTTTTTTTTTTTTTTNCTCTXAAA";
     let mut equalitypairs = Vec::<EdlibEqualityPairRs>::new();
@@ -414,7 +416,7 @@ fn test_distance_hw_with_pair() {
 
 #[test]
 fn test_path_hw() {
-    println!("test_path_hw");
+    trace!("test_path_hw");
     let query = "missing";
     let target = "mississipi";
     //

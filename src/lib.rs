@@ -5,7 +5,7 @@
 // include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 
-extern crate log;
+use env_logger::{Builder};
 
 #[macro_use]
 extern crate lazy_static;
@@ -18,25 +18,16 @@ pub mod bindings;
 
 lazy_static! {
     #[allow(dead_code)]
-    static ref LOG: u64 = {
+    pub static ref LOG: u64 = {
         let res = init_log();
         res
     };
 }
 // install a logger facility
 fn init_log() -> u64 {
-    env_logger::try_init().unwrap();
-    println!("\n ************** initializing logger *****************\n");    
+    let mut builder = Builder::from_default_env();
+    builder.init();
+    println!("\n ************** initializing logger from env *****************\n");    
     return 1;
 }
 
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    // initialize once log system for tests.
-    fn init_log() {
-        env_logger::try_init().unwrap();
-    }
-}  // end of tests
