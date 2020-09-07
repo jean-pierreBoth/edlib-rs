@@ -14,7 +14,6 @@ extern crate lazy_static;
 pub mod edlibrs;
 
 //#[doc(hidden)]
-pub mod bindings;
 
 
 lazy_static! {
