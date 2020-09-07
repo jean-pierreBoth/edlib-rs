@@ -54,13 +54,10 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let src_path = PathBuf::from("src");
     //
     println!("cargo:rerun-if-changed=binding.rs");
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
-    // We dump bindings.rs in src directory beccause it is included in lib.rs
-    bindings.write_to_file(src_path.join("bindings.rs")).expect("Couldn't write bindings in src/ !");
     
 }
