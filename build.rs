@@ -59,5 +59,13 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
-    
+    //
+    // We do this! We get a cleaner interface with 2 separated modules for the C and the rust interface!!
+    // But cargo publish DO NOT LIKE IT  beccause we must not write anywhere else that in OUT_DIR
+    // (try --no-verify to publish)
+    //
+    let src_path = PathBuf::from("src");
+    bindings
+    .write_to_file(src_path.join("bindings.rs"))
+    .expect("Couldn't write bindings!");
 }

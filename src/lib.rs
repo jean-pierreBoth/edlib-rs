@@ -3,7 +3,6 @@
 #![allow(non_snake_case)]
 //include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-// include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 
 use env_logger::{Builder};
@@ -12,7 +11,7 @@ use env_logger::{Builder};
 extern crate lazy_static;
 
 pub mod edlibrs;
-// pub mod bindings;
+pub mod bindings;
 
 //#[doc(hidden)]
 //pub mod bindings;
