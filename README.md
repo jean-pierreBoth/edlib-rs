@@ -51,7 +51,7 @@ The crate enables a logger to monitor the call to the C-interface which is by de
 
 ## Tests
 
-Some tests in module edlib.rs can serve as basic examples.
+Some tests in module edlib.rs can serve as basic examples. Please note that cargo test must be run with variable EDLIB_DIR set.
 In directory examples there is also a small version of the edlib edaligner module (see apps/aligner in edlib installation dir) which runs on
 Fasta files containing only one sequence as contained in the **edlib** directory *test_data*. Contrary to the edlib version the module given a query and a target sequence runs the 3 modes (normal/NW, prefix/SHW and infix/HW) in one pass.
 
@@ -73,7 +73,7 @@ We get the following timing in release mode for Enterobacteria_phage_1.fasta as 
 |  SHW    |     0.670       |  0.684        |  39828    |
 |  HW     |     1.182       |  1.206        |  39828    |
 
-Except for infinitesimal variations of cpu time measurement we wee we have the same computation times.
+Except for infinitesimal variations of cpu time measurement we see we have the same computation times.
 
 ## License
 
