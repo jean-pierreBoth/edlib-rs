@@ -8,7 +8,7 @@ use edlib_rs::edlibrs::*;
 use clap::{App, Arg};
 use std::path::Path;
 use std::process;
-
+use log::*;
 
 use ::cpu_time::ProcessTime;
 use std::time::Duration;
@@ -57,7 +57,7 @@ fn main() {
         println!("got qfile , {}", qfile);
     }
     else {
-        println!("dirdata is mandatory");
+        println!("query file is mandatory");
         process::exit(1);
     }
 
@@ -67,12 +67,14 @@ fn main() {
         println!("got target file , {}", tfile);
     }
     else {
-        println!("dirdata is mandatory");
+        println!("target file is mandatory");
         process::exit(1);
     }
 
     let qfname = Path::new(&dirdata).join(qfile);
+    info!(" got query file : {:?} ", qfname);
     let tfname = Path::new(&dirdata).join(tfile);
+    info!(" got target file : {:?} ",tfname);
     // use logger
     let qseq : Vec<u8>;
     // get sequences

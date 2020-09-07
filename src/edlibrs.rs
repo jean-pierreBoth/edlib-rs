@@ -213,6 +213,26 @@ pub struct EdlibAlignResultRs {
 }  // end of struct EdlibAlignResultRs
 
 
+impl EdlibAlignResultRs {
+    /// get result distance
+    pub fn getDistance(&self) -> i32 {
+        return self.editDistance;
+    }
+    /// get end locations of optimal alignment path
+    pub fn getEndLocations(&self) -> Option<&Vec<i32>> {
+        return self.endLocations.as_ref();
+    }
+    /// get start locations of optimal alignment path
+    pub fn getStartLocations(&self) -> Option<&Vec<i32>> {
+        return self.startLocations.as_ref();
+    }
+    ///
+    pub fn getAlignment(& self) -> Option<&Vec<u8>> {
+        return self.alignment.as_ref();
+    }
+} // end EdlibAlignResultRs block
+
+
 
 impl Default for  EdlibAlignResultRs {
     ///   k = -1, mode = EDLIB_MODE_NW, task = EDLIB_TASK_DISTANCE, no additional equalities.
@@ -363,7 +383,7 @@ fn test_distance_nw() {
     let target = "ACTCTGAAA";
     let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &EdlibAlignConfigRs::default());
     assert_eq!(align_res.status, EDLIB_STATUS_OK);
-    assert_eq!(align_res.editDistance, 4);
+    assert_eq!(align_res.getDistance(), 4);
 } // end test_distance_nw
 
 
@@ -429,17 +449,32 @@ fn test_path_hw() {
     assert!(align_res.startLocations.is_some());
     assert!(align_res.endLocations.is_some());
     //
-    assert!(align_res.alignment.is_some());
+    assert!(align_res.getAlignment().is_some());
 
     let cigar = edlibAlignmentToCigarRs(align_res.alignment.as_ref().unwrap(), &EdlibCigarFormatRs::EDLIB_CIGAR_STANDARD);
     // answer is "5M2I"
     println!(" cigar : {:?}", cigar);
     assert_eq!(cigar, "5M2I");
 
-    let cigarx = edlibAlignmentToCigarRs(align_res.alignment.as_ref().unwrap(), &EdlibCigarFormatRs::EDLIB_CIGAR_EXTENDED);
+    let cigarx = edlibAlignmentToCigarRs(align_res.getAlignment().unwrap(), &EdlibCigarFormatRs::EDLIB_CIGAR_EXTENDED);
     // answer is "5=2I"
     println!(" cigar : {:?}", cigarx);
     assert_eq!(cigarx, "5=2I");
 } // end of test_path_hw
+
+
+
+#[test]
+fn test_distance_nw_with_max_k() {
+    trace!("test_distance_nw");
+    let query = "ACCTCTG";
+    let target = "ACTCTGAAA";
+    let mut config = EdlibAlignConfigRs::default();
+    config.k = 3;
+    let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &config);
+    assert_eq!(align_res.status, EDLIB_STATUS_OK);
+    // real distance is 4 as we asked for max dist = 3 we should get -1
+    assert_eq!(align_res.getDistance(), -1);
+} // end test_distance_nw
 
 }  // mod tests

@@ -20,7 +20,7 @@ in normal mode:
 
 ```rust
     use edlib_rs::edlibrs::*;
-
+    ...
     let query = "ACCTCTG";
     let target = "ACTCTGAAA";
     let align_res = edlibAlignRs(query.as_bytes(), target.as_bytes(), &EdlibAlignConfigRs::default());
@@ -32,7 +32,7 @@ in the infix mode :
 
 ```rust
     use edlib_rs::edlibrs::*;
-    
+    ...
     let query = "ACCTCTG";
     let target = "TTTTTTTTTTTTTTTTTTTTTACTCTGAAA";
     //
@@ -53,9 +53,11 @@ The crate enables a logger to monitor the call to the C-interface which is by de
 
 Some tests in module edlib.rs can serve as basic examples.
 In directory examples there is also a small version of the edlib edaligner module (see apps/aligner in edlib installation dir) which runs on
-Fasta files containing only one sequence as contained in the **edlib** directory *test_data*. Contrary to the edlib version the module given a query and a target sequence runs the 3 modes (normal/NW, prefix/SHW and infix/HW)
+Fasta files containing only one sequence as contained in the **edlib** directory *test_data*. Contrary to the edlib version the module given a query and a target sequence runs the 3 modes (normal/NW, prefix/SHW and infix/HW) in one pass.
 
-We get the following timing in release mode for Enterobacteria_phage_1.fasta as target sequence  and  mutated_90_perc.fasta as query sequence.
+With *RUST_LOG=info ./target/release/examples/edaligner --dirdata  "$edlibpath/test_data/Enterobacteria_Phage_1" --tf "Enterobacteria_phage_1.fasta" --qf "mutated_90_perc.fasta"*
+
+we get the following timing in release mode for Enterobacteria_phage_1.fasta as target sequence  and  mutated_90_perc.fasta as query sequence.
 
 | mode    | edlibrs time(s) | edlib time(s) |  distance |
 |  :---:  |     :---:       |  :------:     |  :----:   |
