@@ -125,8 +125,4 @@ fn main() {
     assert_eq!(align_res.status, EDLIB_STATUS_OK);
     let cpu_time: Duration = start.try_elapsed().unwrap();
     println!("\n mode : {}, cpu time (ms) {} distance : {} ", mod_str , cpu_time.as_millis(), align_res.editDistance);
-
-
-
-
 }

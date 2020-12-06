@@ -47,6 +47,7 @@ in the infix mode :
 The crate relies on the C++ edlib library being installed and compiled as described in edlib documentation.  
 Before running cargo build (or cargo install) the environment variable EDLIB_DIR must be set to where the original C++ edlib directory was cloned. This is necessary for the build.rs step of Cargo to access the edlib library includes.
 Also libstdc++ must be in your path.  
+To run *cargo doc* it is necessay to have EDLIB_DIR set or DOCS_RS.  
 The crate enables a logger to monitor the call to the C-interface which is by default set in Cargo.toml to *info* for release mode and *trace* for debug mode, but can changed by setting the variable RUST_LOG (see env_logger doc).
 
 ## Tests
