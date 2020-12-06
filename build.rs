@@ -23,6 +23,9 @@ fn write_wrapper(edlibpath : &PathBuf, wrapper_path : &PathBuf) {
 
 
 fn main() {
+    if let Ok(_) = env::var("DOCS_RS") {
+        return;
+    }
     let edlib_env = env::var("EDLIB_DIR");
     let edlib_src = edlib_env.expect("env variable EDLIB_DIR not set");
     let edlib_path = PathBuf::from(edlib_src);
