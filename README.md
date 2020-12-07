@@ -44,17 +44,16 @@ in the infix mode :
 
 ## Installation
 
-The crate relies on the C++ edlib library being installed and compiled as described in edlib documentation.  
-Before running cargo build (or cargo install) the environment variable EDLIB_DIR must be set to where the original C++ edlib directory was cloned. This is necessary for the build.rs step of Cargo to access the edlib library includes.
-Also libstdc++ must be in your path.  
-To run *cargo doc* it is necessay to have EDLIB_DIR set or DOCS_RS.  
+The package has the original Edlib library sources embedded in the source tree (See directory **edlib-c**, corresponding to sources at the date of Decembre 2020)
+minus the original test_data directory to limit the size of the crate.
+The standard "cargo build" command runs the edlib's cmake.  
+  
 The crate enables a logger to monitor the call to the C-interface which is by default set in Cargo.toml to *info* for release mode and *trace* for debug mode, but can changed by setting the variable RUST_LOG (see env_logger doc).
 
 ## Tests
 
-Some tests in module edlib.rs can serve as basic examples. Please note that cargo test must be run with variable EDLIB_DIR set.
-In directory examples there is also a small version of the edlib edaligner module (see apps/aligner in edlib installation dir) which runs on
-Fasta files containing only one sequence as contained in the **edlib** directory *test_data*. Contrary to the edlib version the module given a query and a target sequence runs the 3 modes (normal/NW, prefix/SHW and infix/HW) in one pass.
+Some tests in module edlib.rs can serve as basic examples.
+In directory examples there is also a small version of the edlib edaligner module (see apps/aligner in edlib installation dir) which runs on Fasta files containing only one sequence as contained in the **edlib** directory *test_data*. Contrary to the edlib version the module given a query and a target sequence runs the 3 modes (normal/NW, prefix/SHW and infix/HW) in one pass.
 
 With *RUST_LOG=info ./target/release/examples/edaligner --dirdata  "$edlibpath/test_data/Enterobacteria_Phage_1" --tf "Enterobacteria_phage_1.fasta" --qf "mutated_90_perc.fasta"*
 
