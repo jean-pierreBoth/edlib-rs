@@ -13,7 +13,7 @@ use log::*;
 use ::cpu_time::ProcessTime;
 use std::time::Duration;
 /// example
-/// edaligner --dirdata  "/Soft/edlib/test_data/Enterobacteria_phage_1.fasta"
+/// edaligner --dirdata  "/Soft/edlib/test_data/Enterobacteria_Phage_1"
 ///           --tf "Enterobacteria_phage_1.fasta"
 ///           --qf "mutated_60_perc.fasta"
 fn main() {

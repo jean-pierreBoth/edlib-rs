@@ -14,13 +14,12 @@ use log::*;
 use ::std::slice;
 use ::std::os::raw::c_char;
 
-// as bindings is in src can do this. otherwise we should use include! as in bindgen doc
-use crate::bindings::*;
 
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 // Status codes
-pub const EDLIB_STATUS_OK : u32 = 0;
+pub const EDLIB_RS_STATUS_OK : u32 = 0;
 #[allow(dead_code)]
-pub const EDLIB_STATUS_ERROR : u32 = 1;
+pub const EDLIB_RS_STATUS_ERROR : u32 = 1;
 
 ///
 /// Alignment methods - how should Edlib treat gaps before and after query?

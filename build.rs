@@ -7,14 +7,13 @@ use std::fs::File;
 use std::io::prelude::*;
 
 // We have path to edlib, generate wrapper.h with  path to correct include 
-fn write_wrapper(edlibpath : &PathBuf, wrapper_path : &PathBuf) {
-    let mut inclpath = edlibpath.clone();
-    inclpath.push("edlib");
+fn write_wrapper(wrapper_path : &PathBuf) {
+    let mut inclpath = PathBuf::new();
     inclpath.push("include");
     inclpath.push("edlib.h");
-    let mut incl = String::from("#include<");
+    let mut incl = String::from("#include\"");
     incl.push_str(& inclpath.to_str().unwrap());
-    incl.push_str(">");
+    incl.push_str("\"");
     // now we write file wrapper.h
     let mut f = File::create(wrapper_path).unwrap();
     f.write_all(incl.as_bytes()).expect("cannot write wrapper.h");
@@ -23,20 +22,20 @@ fn write_wrapper(edlibpath : &PathBuf, wrapper_path : &PathBuf) {
 
 
 fn main() {
-    if let Ok(_) = env::var("DOCS_RS") {
-        return;
-    }
-    let edlib_env = env::var("EDLIB_DIR");
-    let edlib_src = edlib_env.expect("env variable EDLIB_DIR not set");
-    let edlib_path = PathBuf::from(edlib_src);
+    //  try to build edlib in build.rs with edlib cloned in edlib-c (from which we removed )
+    let dst = cmake::Config::new("edlib-c")
+                .cflag("-D CMAKE_BUILD_TYPE=Release")
+                .build();
+    println!("cargo:rustc-link-search=native={}", dst.display());
+    //
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     let wrapper_path = out_path.join("wrapper.h");
     //
-    write_wrapper(&edlib_path, &wrapper_path);
+    write_wrapper(&wrapper_path);
     //
     let mut libdir = String::from("cargo:rustc-link-search=");
-    libdir.push_str(edlib_path.to_str().unwrap());
-    libdir.push_str("/build/lib");
+    libdir.push_str(out_path.to_str().unwrap());
+    libdir.push_str("/lib");
     println!("{}",libdir);
     println!("cargo:rustc-link-lib=edlib");
     println!("cargo:rustc-link-lib=stdc++");
@@ -63,12 +62,4 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
     //
-    // We do this! We get a cleaner interface with 2 separated modules for the C and the rust interface!!
-    // But cargo publish DO NOT LIKE IT  beccause we must not write anywhere else that in OUT_DIR
-    // (try --no-verify to publish)
-    //
-    let src_path = PathBuf::from("src");
-    bindings
-    .write_to_file(src_path.join("bindings.rs"))
-    .expect("Couldn't write bindings!");
 }

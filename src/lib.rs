@@ -11,10 +11,6 @@ use env_logger::{Builder};
 extern crate lazy_static;
 
 pub mod edlibrs;
-pub mod bindings;
-
-//#[doc(hidden)]
-//pub mod bindings;
 
 
 lazy_static! {
