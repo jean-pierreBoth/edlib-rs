@@ -52,8 +52,10 @@ The crate enables a logger to monitor the call to the C-interface which is by de
 
 ## Tests
 
-Some tests in module edlib.rs can serve as basic examples.
-In directory examples there is also a small version of the edlib edaligner module (see apps/aligner in edlib installation dir) which runs on Fasta files containing only one sequence as contained in the **edlib** directory *test_data*. Contrary to the edlib version the module given a query and a target sequence runs the 3 modes (normal/NW, prefix/SHW and infix/HW) in one pass.
+Some tests in module edlib.rs can serve as basic examples.  
+In directory examples there is also a small version of the edlib edaligner module (see apps/aligner in edlib installation dir) which runs on Fasta files containing only one sequence as contained in the original **edlib** directory *test_data*.  
+As the embedded sources do not contain the original test_data sub-directory, it is necessary to download them separately to run the edaligner example module.  
+Contrary to the edlib version the module given a query and a target sequence runs the 3 modes (normal/NW, prefix/SHW and infix/HW) in one pass.
 
 With *RUST_LOG=info ./target/release/examples/edaligner --dirdata  "$edlibpath/test_data/Enterobacteria_Phage_1" --tf "Enterobacteria_phage_1.fasta" --qf "mutated_90_perc.fasta"*
 
