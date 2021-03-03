@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::fs::File;
 use std::io::prelude::*;
 
-// We have path to edlib, generate wrapper.h with  path to correct include 
+// We have path to edlib, generate wrapper.h with  path to correct include
 fn write_wrapper(wrapper_path : &PathBuf) {
     let mut inclpath = PathBuf::new();
     inclpath.push("include");
@@ -20,6 +20,11 @@ fn write_wrapper(wrapper_path : &PathBuf) {
 }
 
 
+
+#[cfg(target_os = "macos")]
+static LIB_STD: &str ="cargo:rustc-link-lib=c++";
+#[cfg(target_os = "linux")]
+static LIB_STD: &str ="cargo:rustc-link-lib=stdc++";
 
 fn main() {
     //  try to build edlib in build.rs with edlib cloned in edlib-c (from which we removed )
@@ -38,7 +43,7 @@ fn main() {
     libdir.push_str("/lib");
     println!("{}",libdir);
     println!("cargo:rustc-link-lib=edlib");
-    println!("cargo:rustc-link-lib=stdc++");
+    println!("{}", LIB_STD);
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
