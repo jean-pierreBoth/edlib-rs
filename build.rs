@@ -32,13 +32,21 @@ fn main() {
     let wrapper_path = out_path.join("wrapper.h");
     //
     write_wrapper(&wrapper_path);
-    //
+    // adapted fix from sam217pa. libstdc++ name varies...
+    let lib_std : &str;
+    if cfg!(target_os = "macos") {
+        lib_std  = "cargo:rustc-link-lib=c++";
+    }
+    else {
+        lib_std = "cargo:rustc-link-lib=stdc++";
+    }
+    
     let mut libdir = String::from("cargo:rustc-link-search=");
     libdir.push_str(out_path.to_str().unwrap());
     libdir.push_str("/lib");
     println!("{}",libdir);
     println!("cargo:rustc-link-lib=edlib");
-    println!("cargo:rustc-link-lib=stdc++");
+    println!("{}", lib_std);
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
