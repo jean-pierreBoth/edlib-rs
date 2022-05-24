@@ -45,6 +45,7 @@ fn main() {
     libdir.push_str(out_path.to_str().unwrap());
     libdir.push_str("/lib");
     println!("{}",libdir);
+    println!("{}64",libdir);
     println!("cargo:rustc-link-lib=edlib");
     println!("{}", lib_std);
 
